@@ -18,6 +18,7 @@
             --text-muted: #94a3b8;
             --success: #10b981;
             --danger: #ef4444;
+            --danger-hover: #dc2626;
         }
 
         * {
@@ -98,6 +99,25 @@
 
         .btn-success { background: var(--success); }
         .btn-success:hover { background: #059669; }
+
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: var(--danger-hover); }
+
+        .btn-icon-del {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-icon-del:hover {
+            background: var(--danger);
+            color: white;
+        }
 
         .input-group {
             margin-bottom: 18px;
@@ -220,6 +240,18 @@
             text-align: center;
             padding: 8px;
         }
+
+        .city-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 14px;
+        }
+        .city-row:hover {
+            background-color: #24324f;
+        }
     </style>
 </head>
 <body>
@@ -260,8 +292,8 @@
                     <button class="btn btn-secondary" onclick="toggleCityDropdown()">
                         🗺️ Επίλεξε Ταξίδι ▾
                     </button>
-                    <div id="city-dropdown" style="display: none; position: absolute; left: 0; top: 110%; background: #162035; border: 1px solid var(--card-border); border-radius: 8px; width: 220px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 10; text-align: left;">
-                        <div id="city-list" style="max-height: 200px; overflow-y: auto;"></div>
+                    <div id="city-dropdown" style="display: none; position: absolute; left: 0; top: 110%; background: #162035; border: 1px solid var(--card-border); border-radius: 8px; width: 280px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 10; text-align: left;">
+                        <div id="city-list" style="max-height: 250px; overflow-y: auto;"></div>
                     </div>
                 </div>
 
@@ -330,6 +362,7 @@
                             <th>Σημείο Β</th>
                             <th>Τρόπος Μετάβασης</th>
                             <th>Διάρκεια</th>
+                            <th style="width: 50px;"></th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -356,7 +389,10 @@
                     <h2 id="view-city-title">Πόλη</h2>
                     <p class="subtitle" id="view-city-rating" style="margin-bottom: 0; color: #fbbf24; font-weight: 600;"></p>
                 </div>
-                <button class="btn btn-secondary" onclick="openRatingsModal()">⭐ Βαθμολόγησε τα σημεία</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary" onclick="openRatingsModal()">⭐ Βαθμολόγησε τα σημεία</button>
+                    <button class="btn btn-danger" onclick="deleteCurrentTrip()">🗑️ Διαγραφή Ταξιδιού</button>
+                </div>
             </div>
 
             <div id="printable-trip-content" style="margin-top: 20px;">
@@ -368,6 +404,7 @@
                             <th>Σημείο Β</th>
                             <th>Τρόπος Μετάβασης</th>
                             <th>Διάρκεια</th>
+                            <th class="no-print" style="width: 50px;"></th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -477,16 +514,29 @@
                 }
 
                 data.trips.forEach(t => {
-                    const item = document.createElement("div");
-                    item.style = "padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--card-border); font-size: 14px;";
-                    item.innerText = t.city;
-                    item.onmouseover = () => item.style.backgroundColor = "#24324f";
-                    item.onmouseout = () => item.style.backgroundColor = "transparent";
-                    item.onclick = () => {
+                    const row = document.createElement("div");
+                    row.className = "city-row";
+
+                    const titleSpan = document.createElement("span");
+                    titleSpan.style = "cursor: pointer; flex-grow: 1;";
+                    titleSpan.innerText = t.city;
+                    titleSpan.onclick = () => {
                         document.getElementById("city-dropdown").style.display = "none";
                         openTripDetails(t.id);
                     };
-                    listContainer.appendChild(item);
+
+                    const delBtn = document.createElement("button");
+                    delBtn.className = "btn-icon-del";
+                    delBtn.innerText = "✕";
+                    delBtn.title = "Διαγραφή ταξιδιού";
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        confirmAndDeleteTrip(t.id, t.city);
+                    };
+
+                    row.appendChild(titleSpan);
+                    row.appendChild(delBtn);
+                    listContainer.appendChild(row);
                 });
             } catch (err) {
                 console.error("Error loading trips", err);
@@ -496,6 +546,28 @@
         function toggleCityDropdown() {
             const drop = document.getElementById("city-dropdown");
             drop.style.display = drop.style.display === "block" ? "none" : "block";
+        }
+
+        async function confirmAndDeleteTrip(tripId, cityName) {
+            const confirmed = confirm(`Είσαι σίγουρος ότι θέλεις να διαγράψεις οριστικά το ταξίδι "${cityName}";`);
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch(`/api/trip/${tripId}`, { method: "DELETE" });
+                if (res.ok) {
+                    loadUserTripsList();
+                } else {
+                    alert("Σφάλμα κατά τη διαγραφή του ταξιδιού");
+                }
+            } catch (err) {
+                alert("Σφάλμα δικτύου");
+            }
+        }
+
+        function deleteCurrentTrip() {
+            if (!activeTripData) return;
+            confirmAndDeleteTrip(activeTripData.trip_id, activeTripData.city);
+            showHomeView();
         }
 
         // ================= CREATE TRIP VIEW =================
@@ -543,6 +615,11 @@
             renderCreateRoutesTable();
         }
 
+        function removeDraftRoute(index) {
+            createdRoutes.splice(index, 1);
+            renderCreateRoutesTable();
+        }
+
         function renderCreateRoutesTable() {
             const tbody = document.querySelector("#create-routes-table tbody");
             tbody.innerHTML = "";
@@ -556,7 +633,7 @@
             document.getElementById("create-table-container").style.display = "block";
             document.getElementById("create-back-standalone").style.display = "none";
 
-            createdRoutes.forEach(r => {
+            createdRoutes.forEach((r, idx) => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td>${r.day_number}</td>
@@ -564,6 +641,7 @@
                     <td>${r.point_b}</td>
                     <td>${r.transport_mode}</td>
                     <td>${r.duration}</td>
+                    <td><button class="btn-icon-del" onclick="removeDraftRoute(${idx})">✕</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -636,9 +714,23 @@
                     <td>${r.point_b}${rateB}</td>
                     <td>${r.transport}</td>
                     <td>${r.duration}</td>
+                    <td class="no-print"><button class="btn-icon-del" onclick="deleteSavedRoute(${r.id})">✕</button></td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        async function deleteSavedRoute(routeId) {
+            try {
+                const res = await fetch(`/api/route/${routeId}`, { method: "DELETE" });
+                if (res.ok) {
+                    openTripDetails(activeTripData.trip_id);
+                } else {
+                    alert("Σφάλμα κατά τη διαγραφή διαδρομής");
+                }
+            } catch (err) {
+                alert("Σφάλμα δικτύου");
+            }
         }
 
         // ================= RATINGS MODAL =================
@@ -714,17 +806,68 @@
             }
         }
 
-        // ================= PDF EXPORT =================
+        // ================= PDF EXPORT (PRO CLEAN FORMAT) =================
         function exportPDF(elementId, filename) {
-            const element = document.getElementById(elementId);
+            const cityName = activeTripData ? activeTripData.city : (document.getElementById("trip-city").value || "Travel Plan");
+            const ratingText = (activeTripData && activeTripData.avg_rating) ? `⭐ Μέσος Όρος: ${activeTripData.avg_rating}/10` : "";
+
+            const printContainer = document.createElement("div");
+            printContainer.style.padding = "24px";
+            printContainer.style.background = "#ffffff";
+            printContainer.style.color = "#111827";
+            printContainer.style.fontFamily = "Arial, sans-serif";
+
+            printContainer.innerHTML = `
+                <div style="border-bottom: 2px solid #4f46e5; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div>
+                        <h1 style="font-size: 26px; color: #1e1b4b; margin: 0;">${cityName}</h1>
+                        <p style="font-size: 13px; color: #6b7280; margin: 4px 0 0 0;">Πλάνο Ταξιδιού & Διαδρομές</p>
+                    </div>
+                    <div style="font-size: 15px; font-weight: bold; color: #d97706;">
+                        ${ratingText}
+                    </div>
+                </div>
+            `;
+
+            const originalTable = document.getElementById(elementId).querySelector("table") || document.getElementById(elementId);
+            const cloneTable = originalTable.cloneNode(true);
+
+            // Αφαίρεση της στήλης διαγραφής από το PDF
+            cloneTable.querySelectorAll(".no-print, th:last-child, td:last-child").forEach(el => el.remove());
+
+            cloneTable.style.width = "100%";
+            cloneTable.style.borderCollapse = "collapse";
+            cloneTable.style.background = "#ffffff";
+            cloneTable.style.color = "#111827";
+            cloneTable.style.margin = "0";
+
+            cloneTable.querySelectorAll("th").forEach(th => {
+                th.style.background = "#f1f5f9";
+                th.style.color = "#334155";
+                th.style.border = "1px solid #cbd5e1";
+                th.style.padding = "10px 12px";
+                th.style.fontSize = "12px";
+            });
+
+            cloneTable.querySelectorAll("td").forEach(td => {
+                td.style.border = "1px solid #e2e8f0";
+                td.style.padding = "9px 12px";
+                td.style.color = "#1e293b";
+                td.style.fontSize = "12px";
+            });
+
+            printContainer.appendChild(cloneTable);
+
             const opt = {
-                margin: 10,
-                filename: `${filename}.pdf`,
+                margin: [12, 12, 12, 12],
+                filename: `${cityName}_Itinerary.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
-            html2pdf().set(opt).from(element).save();
+
+            html2pdf().set(opt).from(printContainer).save();
         }
     </script>
 </body>
