@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Planner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151d30;
+            --card-border: #232f48;
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-light: #6366f1;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 40px 16px;
+        }
+
+        .view-section {
+            display: none;
+            width: 100%;
+            max-width: 900px;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 32px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        h1, h2, h3 {
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 15px;
+        }
+
+        .btn:hover { background: var(--accent-hover); }
+
+        .btn-secondary {
+            background: #2a3754;
+            color: var(--text-main);
+        }
+        .btn-secondary:hover { background: #374669; }
+
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #059669; }
+
+        .input-group {
+            margin-bottom: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input, select {
+            background: #0d1424;
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-light);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: #0d1424;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 14px;
+        }
+
+        th {
+            background: #17223b;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 16px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 24px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+        }
+        .close-btn:hover { color: var(--danger); }
+
+        .rating-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #1f2b42;
+        }
+
+        .rating-item input {
+            width: 90px;
+            text-align: center;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= 1. VIEW AUTH (LOGIN / SIGNUP) ================= -->
+    <div id="view-auth" class="view-section active">
+        <div class="card" style="max-width: 420px; margin: 40px auto;">
+            <h2 id="auth-title">Σύνδεση</h2>
+            <p class="subtitle" id="auth-subtitle">Συνδέσου για να δεις τα ταξίδια σου</p>
+            
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="auth-username" placeholder="π.χ. travel_lover">
+            </div>
+            <div class="input-group">
+                <label>Κωδικός</label>
+                <input type="password" id="auth-password" placeholder="••••••••">
+            </div>
+
+            <button class="btn" style="width: 100%; margin-top: 10px;" id="auth-submit-btn" onclick="handleAuthSubmit()">Είσοδος</button>
+            
+            <p style="text-align: center; margin-top: 18px; font-size: 14px; color: var(--text-muted);">
+                <span id="auth-toggle-msg">Δεν έχεις λογαριασμό;</span>
+                <a href="#" style="color: var(--accent-light); text-decoration: none; font-weight: 600;" onclick="toggleAuthMode()">Εγγραφή</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- ================= 2. VIEW HOME ================= -->
+    <div id="view-home" class="view-section">
+        <div class="card" style="text-align: center; padding: 60px 24px;">
+            <h1 style="font-size: 28px;">Καλώς ήρθες στον κόσμο των ταξιδιών</h1>
+            <p class="subtitle">Οργάνωσε, κατέγραψε και βαθμολόγησε κάθε σου εμπειρία</p>
+
+            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 30px;">
+                <!-- Κουμπί Αριστερά: Επιλογή Ταξιδιού -->
+                <div style="position: relative;">
+                    <button class="btn btn-secondary" onclick="toggleCityDropdown()">
+                        🗺️ Επίλεξε Ταξίδι ▾
+                    </button>
+                    <div id="city-dropdown" style="display: none; position: absolute; left: 0; top: 110%; background: #162035; border: 1px solid var(--card-border); border-radius: 8px; width: 220px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 10; text-align: left;">
+                        <div id="city-list" style="max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
+                <!-- Κουμπί Δεξιά: Προσθήκη Νέου Ταξιδιού -->
+                <button class="btn" onclick="showNewTripView()">
+                    ➕ Πρόσθεσε νέο ταξίδι
+                </button>
+            </div>
+
+            <div style="margin-top: 40px;">
+                <button class="btn btn-secondary" style="font-size: 13px; padding: 6px 14px;" onclick="logout()">Αποσύνδεση</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 3. VIEW CREATE TRIP ================= -->
+    <div id="view-create" class="view-section">
+        <div class="card">
+            <h2>Δημιουργία Νέου Ταξιδιού</h2>
+            <p class="subtitle">Κατάγραψε βήμα-βήμα το καθημερινό σου πρόγραμμα</p>
+
+            <div class="input-group">
+                <label>Όνομα Πόλης</label>
+                <input type="text" id="trip-city" placeholder="π.χ. Ρώμη">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--card-border); margin: 20px 0;">
+
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Ημέρα</label>
+                    <input type="text" id="route-day" placeholder="π.χ. 1η Ημέρα">
+                </div>
+                <div class="input-group">
+                    <label>Σημείο Α (Αφετηρία)</label>
+                    <input type="text" id="route-point-a" placeholder="π.χ. Piazza Navona">
+                </div>
+                <div class="input-group">
+                    <label>Σημείο Β (Προορισμός)</label>
+                    <input type="text" id="route-point-b" placeholder="π.χ. Colosseum">
+                </div>
+                <div class="input-group">
+                    <label>Τρόπος Μετάβασης</label>
+                    <select id="route-transport">
+                        <option value="Πόδια">🚶 Πόδια</option>
+                        <option value="Αυτοκίνητο">🚗 Αυτοκίνητο</option>
+                        <option value="Μέσα (ΜΜΜ)">🚇 Μέσα (ΜΜΜ)</option>
+                        <option value="Ποδήλατο / Πατίνι">🛴 Ποδήλατο / Πατίνι</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Διάρκεια (από Maps)</label>
+                    <input type="text" id="route-duration" placeholder="π.χ. 25 λεπτά">
+                </div>
+            </div>
+
+            <button class="btn" onclick="addRouteToTable()">➕ Προσθήκη Διαδρομής</button>
+
+            <!-- Πίνακας Δημιουργίας -->
+            <div id="create-table-container" style="display: none; margin-top: 24px;">
+                <table id="create-routes-table">
+                    <thead>
+                        <tr>
+                            <th>Ημέρα</th>
+                            <th>Σημείο Α</th>
+                            <th>Σημείο Β</th>
+                            <th>Τρόπος Μετάβασης</th>
+                            <th>Διάρκεια</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <div class="actions-bar">
+                    <button class="btn btn-success" onclick="saveTripToDB()">💾 Αποθήκευση Ταξιδιού</button>
+                    <button class="btn btn-secondary" onclick="exportPDF('create-routes-table', 'Trip_Plan')">📄 Λήψη σε PDF</button>
+                    <button class="btn btn-secondary" onclick="showHomeView()">↩ Επιστροφή στην Αρχική</button>
+                </div>
+            </div>
+
+            <div id="create-back-standalone" style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="showHomeView()">↩ Επιστροφή στην Αρχική</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 4. VIEW VIEW TRIP ================= -->
+    <div id="view-trip-details" class="view-section">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h2 id="view-city-title">Πόλη</h2>
+                    <p class="subtitle" id="view-city-rating" style="margin-bottom: 0; color: #fbbf24; font-weight: 600;"></p>
+                </div>
+                <button class="btn btn-secondary" onclick="openRatingsModal()">⭐ Βαθμολόγησε τα σημεία</button>
+            </div>
+
+            <div id="printable-trip-content" style="margin-top: 20px;">
+                <table id="details-routes-table">
+                    <thead>
+                        <tr>
+                            <th>Ημέρα</th>
+                            <th>Σημείο Α</th>
+                            <th>Σημείο Β</th>
+                            <th>Τρόπος Μετάβασης</th>
+                            <th>Διάρκεια</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="actions-bar">
+                <button class="btn btn-secondary" onclick="exportPDF('printable-trip-content', 'Travel_Itinerary')">🖨️ Εκτύπωση σε PDF</button>
+                <button class="btn btn-secondary" onclick="showHomeView()">↩ Επιστροφή στην Αρχική</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL RATINGS ================= -->
+    <div id="ratings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeRatingsModal()">&times;</button>
+            <h3 style="margin-bottom: 8px;">Βαθμολόγηση Σημείων</h3>
+            <p class="subtitle" style="font-size: 13px;">Βάλε τη βαθμολογία σου για κάθε σημείο (π.χ. 8.5/10)</p>
+
+            <div id="ratings-list"></div>
+
+            <button class="btn btn-success" style="width: 100%; margin-top: 14px;" onclick="saveRatingsToDB()">💾 Αποθήκευση Βαθμολογιών</button>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT ================= -->
+    <script>
+        let currentUserId = localStorage.getItem("travel_user_id");
+        let isSignup = false;
+        let createdRoutes = [];
+        let activeTripData = null;
+
+        window.onload = () => {
+            if (currentUserId) {
+                showHomeView();
+            } else {
+                switchView("view-auth");
+            }
+        };
+
+        function switchView(viewId) {
+            document.querySelectorAll(".view-section").forEach(sec => sec.classList.remove("active"));
+            document.getElementById(viewId).classList.add("active");
+        }
+
+        // ================= AUTH =================
+        function toggleAuthMode() {
+            isSignup = !isSignup;
+            document.getElementById("auth-title").innerText = isSignup ? "Δημιουργία Λογαριασμού" : "Σύνδεση";
+            document.getElementById("auth-subtitle").innerText = isSignup ? "Φτιάξε λογαριασμό για να ξεκινήσεις" : "Συνδέσου για να δεις τα ταξίδια σου";
+            document.getElementById("auth-submit-btn").innerText = isSignup ? "Εγγραφή" : "Είσοδος";
+            document.getElementById("auth-toggle-msg").innerText = isSignup ? "Έχεις ήδη λογαριασμό;" : "Δεν έχεις λογαριασμό;";
+        }
+
+        async function handleAuthSubmit() {
+            const username = document.getElementById("auth-username").value.trim();
+            const password = document.getElementById("auth-password").value.trim();
+
+            if (!username || !password) {
+                alert("Συμπλήρωσε username και κωδικό");
+                return;
+            }
+
+            const endpoint = isSignup ? "/api/register" : "/api/login";
+            try {
+                const res = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.detail || "Σφάλμα κατά τη σύνδεση");
+                    return;
+                }
+                currentUserId = data.user_id;
+                localStorage.setItem("travel_user_id", currentUserId);
+                showHomeView();
+            } catch (err) {
+                alert("Σφάλμα δικτύου");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("travel_user_id");
+            currentUserId = null;
+            switchView("view-auth");
+        }
+
+        // ================= HOME VIEW =================
+        function showHomeView() {
+            switchView("view-home");
+            loadUserTripsList();
+        }
+
+        async function loadUserTripsList() {
+            try {
+                const res = await fetch(`/api/trips/${currentUserId}`);
+                const data = await res.json();
+                const listContainer = document.getElementById("city-list");
+                listContainer.innerHTML = "";
+
+                if (data.trips.length === 0) {
+                    listContainer.innerHTML = `<div style="padding: 12px; font-size: 13px; color: var(--text-muted);">Δεν υπάρχουν ταξίδια</div>`;
+                    return;
+                }
+
+                data.trips.forEach(t => {
+                    const item = document.createElement("div");
+                    item.style = "padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--card-border); font-size: 14px;";
+                    item.innerText = t.city;
+                    item.onmouseover = () => item.style.backgroundColor = "#24324f";
+                    item.onmouseout = () => item.style.backgroundColor = "transparent";
+                    item.onclick = () => {
+                        document.getElementById("city-dropdown").style.display = "none";
+                        openTripDetails(t.id);
+                    };
+                    listContainer.appendChild(item);
+                });
+            } catch (err) {
+                console.error("Error loading trips", err);
+            }
+        }
+
+        function toggleCityDropdown() {
+            const drop = document.getElementById("city-dropdown");
+            drop.style.display = drop.style.display === "block" ? "none" : "block";
+        }
+
+        // ================= CREATE TRIP VIEW =================
+        function showNewTripView() {
+            createdRoutes = [];
+            document.getElementById("trip-city").value = "";
+            clearRouteInputs();
+            renderCreateRoutesTable();
+            switchView("view-create");
+        }
+
+        function clearRouteInputs() {
+            document.getElementById("route-day").value = "";
+            document.getElementById("route-point-a").value = "";
+            document.getElementById("route-point-b").value = "";
+            document.getElementById("route-duration").value = "";
+        }
+
+        function addRouteToTable() {
+            const city = document.getElementById("trip-city").value.trim();
+            const day = document.getElementById("route-day").value.trim();
+            const a = document.getElementById("route-point-a").value.trim();
+            const b = document.getElementById("route-point-b").value.trim();
+            const transport = document.getElementById("route-transport").value;
+            const dur = document.getElementById("route-duration").value.trim();
+
+            if (!city) {
+                alert("Συμπλήρωσε πρώτα το όνομα της πόλης");
+                return;
+            }
+            if (!day || !a || !b || !dur) {
+                alert("Συμπλήρωσε όλα τα πεδία της διαδρομής");
+                return;
+            }
+
+            createdRoutes.push({
+                day_number: day,
+                point_a: a,
+                point_b: b,
+                transport_mode: transport,
+                duration: dur
+            });
+
+            clearRouteInputs();
+            renderCreateRoutesTable();
+        }
+
+        function renderCreateRoutesTable() {
+            const tbody = document.querySelector("#create-routes-table tbody");
+            tbody.innerHTML = "";
+
+            if (createdRoutes.length === 0) {
+                document.getElementById("create-table-container").style.display = "none";
+                document.getElementById("create-back-standalone").style.display = "block";
+                return;
+            }
+
+            document.getElementById("create-table-container").style.display = "block";
+            document.getElementById("create-back-standalone").style.display = "none";
+
+            createdRoutes.forEach(r => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${r.day_number}</td>
+                    <td>${r.point_a}</td>
+                    <td>${r.point_b}</td>
+                    <td>${r.transport_mode}</td>
+                    <td>${r.duration}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function saveTripToDB() {
+            const city = document.getElementById("trip-city").value.trim();
+            if (!city || createdRoutes.length === 0) {
+                alert("Συμπλήρωσε πόλη και τουλάχιστον μία διαδρομή");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/trips/save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user_id: parseInt(currentUserId),
+                        city: city,
+                        routes: createdRoutes
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert("Το ταξίδι αποθηκεύτηκε επιτυχώς!");
+                    openTripDetails(data.trip_id);
+                } else {
+                    alert("Σφάλμα αποθήκευσης");
+                }
+            } catch (err) {
+                alert("Σφάλμα δικτύου");
+            }
+        }
+
+        // ================= VIEW TRIP DETAILS =================
+        async function openTripDetails(tripId) {
+            try {
+                const res = await fetch(`/api/trip/${tripId}`);
+                activeTripData = await res.json();
+
+                document.getElementById("view-city-title").innerText = activeTripData.city;
+                const ratingBadge = document.getElementById("view-city-rating");
+                if (activeTripData.avg_rating) {
+                    ratingBadge.innerText = `⭐ Μέσος Όρος: ${activeTripData.avg_rating}/10`;
+                } else {
+                    ratingBadge.innerText = "";
+                }
+
+                renderDetailsTable();
+                switchView("view-trip-details");
+            } catch (err) {
+                alert("Σφάλμα ανάκτησης ταξιδιού");
+            }
+        }
+
+        function renderDetailsTable() {
+            const tbody = document.querySelector("#details-routes-table tbody");
+            tbody.innerHTML = "";
+
+            const ratings = activeTripData.ratings || {};
+
+            activeTripData.routes.forEach(r => {
+                const rateA = ratings[r.point_a] !== undefined ? ` (${ratings[r.point_a]}/10)` : "";
+                const rateB = ratings[r.point_b] !== undefined ? ` (${ratings[r.point_b]}/10)` : "";
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${r.day}</td>
+                    <td>${r.point_a}${rateA}</td>
+                    <td>${r.point_b}${rateB}</td>
+                    <td>${r.transport}</td>
+                    <td>${r.duration}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ================= RATINGS MODAL =================
+        function openRatingsModal() {
+            if (!activeTripData) return;
+
+            const uniquePoints = new Set();
+            activeTripData.routes.forEach(r => {
+                uniquePoints.add(r.point_a);
+                uniquePoints.add(r.point_b);
+            });
+
+            const list = document.getElementById("ratings-list");
+            list.innerHTML = "";
+
+            const ratings = activeTripData.ratings || {};
+
+            uniquePoints.forEach(pt => {
+                const row = document.createElement("div");
+                row.className = "rating-item";
+                const val = ratings[pt] !== undefined ? ratings[pt] : "";
+                row.innerHTML = `
+                    <span style="font-weight: 500;">${pt}</span>
+                    <input type="number" step="0.1" min="0" max="10" placeholder="0-10" value="${val}" data-point="${pt}">
+                `;
+                list.appendChild(row);
+            });
+
+            document.getElementById("ratings-modal").classList.add("active");
+        }
+
+        function closeRatingsModal() {
+            document.getElementById("ratings-modal").classList.remove("active");
+        }
+
+        async function saveRatingsToDB() {
+            const inputs = document.querySelectorAll("#ratings-list input");
+            const ratingsPayload = [];
+
+            inputs.forEach(inp => {
+                const val = parseFloat(inp.value);
+                if (!isNaN(val)) {
+                    ratingsPayload.push({
+                        point_name: inp.dataset.point,
+                        rating: val
+                    });
+                }
+            });
+
+            if (ratingsPayload.length === 0) {
+                closeRatingsModal();
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/trip/ratings", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        trip_id: activeTripData.trip_id,
+                        ratings: ratingsPayload
+                    })
+                });
+
+                if (res.ok) {
+                    closeRatingsModal();
+                    openTripDetails(activeTripData.trip_id);
+                } else {
+                    alert("Σφάλμα κατά την αποθήκευση των βαθμολογιών");
+                }
+            } catch (err) {
+                alert("Σφάλμα δικτύου");
+            }
+        }
+
+        // ================= PDF EXPORT =================
+        function exportPDF(elementId, filename) {
+            const element = document.getElementById(elementId);
+            const opt = {
+                margin: 10,
+                filename: `${filename}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>
