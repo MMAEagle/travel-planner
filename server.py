@@ -24,7 +24,7 @@ app.add_middleware(
 def get_db():
     return psycopg2.connect(DB_URL)
 
-# Native hashing με hashlib (χωρίς dependencies bcrypt)
+# Native hashing
 def hash_password(password: str) -> str:
     salt = os.urandom(16).hex()
     hashed = hashlib.sha256((password + salt).encode('utf-8')).hexdigest()
@@ -101,7 +101,6 @@ def login(user: UserAuth):
     
     return {"status": "ok", "user_id": row[0], "username": username}
 
-#=============================================================
 # ================= DELETE ENDPOINTS =================
 @app.delete("/api/trip/{trip_id}")
 def delete_trip(trip_id: int):
@@ -122,6 +121,7 @@ def delete_route(route_id: int):
     c.close()
     conn.close()
     return {"status": "ok"}
+
 # ================= TRIPS & ROUTES ENDPOINTS =================
 @app.get("/api/trips/{user_id}")
 def get_user_trips(user_id: int):
@@ -201,7 +201,6 @@ def get_trip_details(trip_id: int):
         "avg_rating": avg_rating
     }
 
-# ================= RATINGS ENDPOINT =================
 @app.post("/api/trip/ratings")
 def save_ratings(data: SaveRatingsRequest):
     conn = get_db()
