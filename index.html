@@ -838,33 +838,99 @@
             }
         }
 
-        // ================= PDF EXPORT (DIRECT & ROBUST) =================
+// ================= PDF EXPORT (ΠΕΝΤΑΚΑΘΑΡΟ PRINT LAYOUT) =================
         function exportPDF(elementId, filename) {
             const cityName = activeTripData ? activeTripData.city : (document.getElementById("trip-city").value || "Travel_Plan");
-            const targetElement = document.getElementById(elementId);
+            const ratingText = (activeTripData && activeTripData.avg_rating) ? `⭐ Μέσος Όρος: ${activeTripData.avg_rating}/10` : "";
 
-            // Προσωρινή απόκρυψη στοιχείων που δεν πρέπει να φαίνονται στο PDF
-            const hideElements = targetElement.querySelectorAll(".btn, .btn-icon-del, .actions-bar-top, th:last-child, td:last-child");
-            hideElements.forEach(el => el.style.display = "none");
+            const tableElement = document.getElementById(elementId).querySelector("table") || document.getElementById(elementId);
+            const cloneTable = tableElement.cloneNode(true);
 
-            const opt = {
-                margin:       [10, 10, 10, 10],
-                filename:     `${cityName}_Itinerary.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, backgroundColor: '#151d30' },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+            // Αφαίρεση της στήλης με τα κόκκινα ✕
+            cloneTable.querySelectorAll(".no-print, th:last-child, td:last-child").forEach(el => el.remove());
 
-            html2pdf().set(opt).from(targetElement).save().then(() => {
-                // Επαναφορά στοιχείων
-                hideElements.forEach(el => el.style.display = "");
-            }).catch(err => {
-                console.error("PDF export error", err);
-                hideElements.forEach(el => el.style.display = "");
-                // Fallback στην native εκτύπωση σε περίπτωση σφάλματος
-                window.print();
-            });
+            const printWindow = window.open("", "_blank", "width=900,height=700");
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${cityName} - Travel Itinerary</title>
+                    <style>
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                            margin: 30px;
+                            color: #111827;
+                            background: #ffffff;
+                        }
+                        .header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: flex-end;
+                            border-bottom: 2px solid #4f46e5;
+                            padding-bottom: 12px;
+                            margin-bottom: 24px;
+                        }
+                        h1 {
+                            margin: 0;
+                            font-size: 26px;
+                            color: #1e1b4b;
+                        }
+                        p {
+                            margin: 4px 0 0 0;
+                            color: #64748b;
+                            font-size: 14px;
+                        }
+                        .rating {
+                            font-size: 16px;
+                            font-weight: bold;
+                            color: #d97706;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 10px;
+                        }
+                        th, td {
+                            border: 1px solid #cbd5e1;
+                            padding: 10px 14px;
+                            text-align: left;
+                            font-size: 13px;
+                        }
+                        th {
+                            background-color: #f1f5f9;
+                            color: #0f172a;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                            font-size: 11px;
+                            letter-spacing: 0.5px;
+                        }
+                        tr:nth-child(even) {
+                            background-color: #f8fafc;
+                        }
+                        @media print {
+                            body { margin: 15mm; }
+                            tr { page-break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div>
+                            <h1>${cityName}</h1>
+                            <p>Πλάνο Ταξιδιού & Διαδρομές</p>
+                        </div>
+                        <div class="rating">${ratingText}</div>
+                    </div>
+                    ${cloneTable.outerHTML}
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+            printWindow.focus();
+
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 350);
         }
-    </script>
-</body>
-</html>
