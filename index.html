@@ -252,6 +252,36 @@
         .city-row:hover {
             background-color: #24324f;
         }
+
+        /* Εκτύπωση */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 0 !important;
+            }
+            .btn, .actions-bar, .btn-icon-del, #ratings-modal {
+                display: none !important;
+            }
+            .card {
+                background: white !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+            table {
+                background: white !important;
+                color: black !important;
+                border: 1px solid #ddd !important;
+            }
+            th, td {
+                color: black !important;
+                border-bottom: 1px solid #ddd !important;
+            }
+            th {
+                background: #f4f4f4 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -354,23 +384,25 @@
 
             <!-- Πίνακας Δημιουργίας -->
             <div id="create-table-container" style="display: none; margin-top: 24px;">
-                <table id="create-routes-table">
-                    <thead>
-                        <tr>
-                            <th>Ημέρα</th>
-                            <th>Σημείο Α</th>
-                            <th>Σημείο Β</th>
-                            <th>Τρόπος Μετάβασης</th>
-                            <th>Διάρκεια</th>
-                            <th style="width: 50px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <div id="create-print-wrapper">
+                    <table id="create-routes-table">
+                        <thead>
+                            <tr>
+                                <th>Ημέρα</th>
+                                <th>Σημείο Α</th>
+                                <th>Σημείο Β</th>
+                                <th>Τρόπος Μετάβασης</th>
+                                <th>Διάρκεια</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
 
                 <div class="actions-bar">
                     <button class="btn btn-success" onclick="saveTripToDB()">💾 Αποθήκευση Ταξιδιού</button>
-                    <button class="btn btn-secondary" onclick="exportPDF('create-routes-table', 'Trip_Plan')">📄 Λήψη σε PDF</button>
+                    <button class="btn btn-secondary" onclick="exportPDF('create-print-wrapper', 'Trip_Plan')">📄 Λήψη σε PDF</button>
                     <button class="btn btn-secondary" onclick="showHomeView()">↩ Επιστροφή στην Αρχική</button>
                 </div>
             </div>
@@ -384,18 +416,18 @@
     <!-- ================= 4. VIEW VIEW TRIP ================= -->
     <div id="view-trip-details" class="view-section">
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    <h2 id="view-city-title">Πόλη</h2>
-                    <p class="subtitle" id="view-city-rating" style="margin-bottom: 0; color: #fbbf24; font-weight: 600;"></p>
+            <div id="printable-trip-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                    <div>
+                        <h2 id="view-city-title">Πόλη</h2>
+                        <p class="subtitle" id="view-city-rating" style="margin-bottom: 0; color: #fbbf24; font-weight: 600;"></p>
+                    </div>
+                    <div style="display: flex; gap: 8px;" class="actions-bar-top">
+                        <button class="btn btn-secondary" onclick="openRatingsModal()">⭐ Βαθμολόγησε τα σημεία</button>
+                        <button class="btn btn-danger" onclick="deleteCurrentTrip()">🗑️ Διαγραφή Ταξιδιού</button>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-secondary" onclick="openRatingsModal()">⭐ Βαθμολόγησε τα σημεία</button>
-                    <button class="btn btn-danger" onclick="deleteCurrentTrip()">🗑️ Διαγραφή Ταξιδιού</button>
-                </div>
-            </div>
 
-            <div id="printable-trip-content" style="margin-top: 20px;">
                 <table id="details-routes-table">
                     <thead>
                         <tr>
@@ -806,84 +838,33 @@
             }
         }
 
-// ================= PDF EXPORT (ΑΠΟΛΥΤΑ ΣΤΑΘΕΡΟ) =================
-        async function exportPDF(elementId, filename) {
-            const cityName = activeTripData ? activeTripData.city : (document.getElementById("trip-city").value || "Travel Plan");
-            const ratingText = (activeTripData && activeTripData.avg_rating) ? `⭐ Μέσος Όρος: ${activeTripData.avg_rating}/10` : "";
+        // ================= PDF EXPORT (DIRECT & ROBUST) =================
+        function exportPDF(elementId, filename) {
+            const cityName = activeTripData ? activeTripData.city : (document.getElementById("trip-city").value || "Travel_Plan");
+            const targetElement = document.getElementById(elementId);
 
-            // 1. Δημιουργία container και προσωρινή τοποθέτηση στο DOM για να μπορεί να το διαβάσει το html2canvas
-            const wrapper = document.createElement("div");
-            wrapper.id = "temp-pdf-export-wrapper";
-            wrapper.style.position = "fixed";
-            wrapper.style.left = "0";
-            wrapper.style.top = "0";
-            wrapper.style.width = "800px";
-            wrapper.style.zIndex = "-9999";
-            wrapper.style.background = "#ffffff";
-            wrapper.style.color = "#000000";
-            wrapper.style.padding = "30px";
-            wrapper.style.fontFamily = "Arial, sans-serif";
+            // Προσωρινή απόκρυψη στοιχείων που δεν πρέπει να φαίνονται στο PDF
+            const hideElements = targetElement.querySelectorAll(".btn, .btn-icon-del, .actions-bar-top, th:last-child, td:last-child");
+            hideElements.forEach(el => el.style.display = "none");
 
-            // 2. Επικεφαλίδα
-            let htmlContent = `
-                <div style="border-bottom: 2px solid #4f46e5; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
-                    <div>
-                        <h1 style="font-size: 26px; color: #1e1b4b; margin: 0;">${cityName}</h1>
-                        <p style="font-size: 13px; color: #6b7280; margin: 4px 0 0 0;">Πλάνο Ταξιδιού & Διαδρομές</p>
-                    </div>
-                    <div style="font-size: 15px; font-weight: bold; color: #d97706;">
-                        ${ratingText}
-                    </div>
-                </div>
-            `;
-
-            // 3. Αντιγραφή πίνακα
-            const srcTable = document.getElementById(elementId).querySelector("table") || document.getElementById(elementId);
-            const cloneTable = srcTable.cloneNode(true);
-
-            // Καθαρισμός κουμπιών διαγραφής
-            cloneTable.querySelectorAll(".no-print, th:last-child, td:last-child").forEach(el => el.remove());
-
-            cloneTable.style.width = "100%";
-            cloneTable.style.borderCollapse = "collapse";
-            cloneTable.style.background = "#ffffff";
-            cloneTable.style.color = "#000000";
-            cloneTable.style.fontSize = "13px";
-
-            cloneTable.querySelectorAll("th").forEach(th => {
-                th.style.background = "#f1f5f9";
-                th.style.color = "#0f172a";
-                th.style.border = "1px solid #94a3b8";
-                th.style.padding = "10px";
-                th.style.fontWeight = "bold";
-            });
-
-            cloneTable.querySelectorAll("td").forEach(td => {
-                td.style.border = "1px solid #cbd5e1";
-                td.style.padding = "8px 10px";
-                td.style.color = "#1e293b";
-            });
-
-            wrapper.innerHTML = htmlContent;
-            wrapper.appendChild(cloneTable);
-            document.body.appendChild(wrapper);
-
-            // 4. Επιλογές εξαγωγής
             const opt = {
-                margin: [10, 10, 10, 10],
-                filename: `${cityName}_Itinerary.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin:       [10, 10, 10, 10],
+                filename:     `${cityName}_Itinerary.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, backgroundColor: '#151d30' },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            try {
-                await html2pdf().set(opt).from(wrapper).save();
-            } finally {
-                // Αφαίρεση του προσωρινού στοιχείου μετά την ολοκλήρωση
-                wrapper.remove();
-            }
+            html2pdf().set(opt).from(targetElement).save().then(() => {
+                // Επαναφορά στοιχείων
+                hideElements.forEach(el => el.style.display = "");
+            }).catch(err => {
+                console.error("PDF export error", err);
+                hideElements.forEach(el => el.style.display = "");
+                // Fallback στην native εκτύπωση σε περίπτωση σφάλματος
+                window.print();
+            });
         }
-        </script>
+    </script>
 </body>
 </html>
