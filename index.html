@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Travel Planner</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -252,36 +251,6 @@
         .city-row:hover {
             background-color: #24324f;
         }
-
-        /* Εκτύπωση */
-        @media print {
-            body {
-                background: white !important;
-                color: black !important;
-                padding: 0 !important;
-            }
-            .btn, .actions-bar, .btn-icon-del, #ratings-modal {
-                display: none !important;
-            }
-            .card {
-                background: white !important;
-                border: none !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-            }
-            table {
-                background: white !important;
-                color: black !important;
-                border: 1px solid #ddd !important;
-            }
-            th, td {
-                color: black !important;
-                border-bottom: 1px solid #ddd !important;
-            }
-            th {
-                background: #f4f4f4 !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -305,7 +274,7 @@
             
             <p style="text-align: center; margin-top: 18px; font-size: 14px; color: var(--text-muted);">
                 <span id="auth-toggle-msg">Δεν έχεις λογαριασμό;</span>
-                <a href="#" style="color: var(--accent-light); text-decoration: none; font-weight: 600;" onclick="toggleAuthMode()">Εγγραφή</a>
+                <a href="javascript:void(0)" style="color: var(--accent-light); text-decoration: none; font-weight: 600;" onclick="toggleAuthMode()">Εγγραφή</a>
             </p>
         </div>
     </div>
@@ -384,25 +353,23 @@
 
             <!-- Πίνακας Δημιουργίας -->
             <div id="create-table-container" style="display: none; margin-top: 24px;">
-                <div id="create-print-wrapper">
-                    <table id="create-routes-table">
-                        <thead>
-                            <tr>
-                                <th>Ημέρα</th>
-                                <th>Σημείο Α</th>
-                                <th>Σημείο Β</th>
-                                <th>Τρόπος Μετάβασης</th>
-                                <th>Διάρκεια</th>
-                                <th style="width: 50px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                <table id="create-routes-table">
+                    <thead>
+                        <tr>
+                            <th>Ημέρα</th>
+                            <th>Σημείο Α</th>
+                            <th>Σημείο Β</th>
+                            <th>Τρόπος Μετάβασης</th>
+                            <th>Διάρκεια</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
 
                 <div class="actions-bar">
                     <button class="btn btn-success" onclick="saveTripToDB()">💾 Αποθήκευση Ταξιδιού</button>
-                    <button class="btn btn-secondary" onclick="exportPDF('create-print-wrapper', 'Trip_Plan')">📄 Λήψη σε PDF</button>
+                    <button class="btn btn-secondary" onclick="exportPDF('create-routes-table')">📄 Λήψη σε PDF</button>
                     <button class="btn btn-secondary" onclick="showHomeView()">↩ Επιστροφή στην Αρχική</button>
                 </div>
             </div>
@@ -416,35 +383,33 @@
     <!-- ================= 4. VIEW VIEW TRIP ================= -->
     <div id="view-trip-details" class="view-section">
         <div class="card">
-            <div id="printable-trip-content">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
-                    <div>
-                        <h2 id="view-city-title">Πόλη</h2>
-                        <p class="subtitle" id="view-city-rating" style="margin-bottom: 0; color: #fbbf24; font-weight: 600;"></p>
-                    </div>
-                    <div style="display: flex; gap: 8px;" class="actions-bar-top">
-                        <button class="btn btn-secondary" onclick="openRatingsModal()">⭐ Βαθμολόγησε τα σημεία</button>
-                        <button class="btn btn-danger" onclick="deleteCurrentTrip()">🗑️ Διαγραφή Ταξιδιού</button>
-                    </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                <div>
+                    <h2 id="view-city-title">Πόλη</h2>
+                    <p class="subtitle" id="view-city-rating" style="margin-bottom: 0; color: #fbbf24; font-weight: 600;"></p>
                 </div>
-
-                <table id="details-routes-table">
-                    <thead>
-                        <tr>
-                            <th>Ημέρα</th>
-                            <th>Σημείο Α</th>
-                            <th>Σημείο Β</th>
-                            <th>Τρόπος Μετάβασης</th>
-                            <th>Διάρκεια</th>
-                            <th class="no-print" style="width: 50px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary" onclick="openRatingsModal()">⭐ Βαθμολόγησε τα σημεία</button>
+                    <button class="btn btn-danger" onclick="deleteCurrentTrip()">🗑️ Διαγραφή Ταξιδιού</button>
+                </div>
             </div>
 
+            <table id="details-routes-table">
+                <thead>
+                    <tr>
+                        <th>Ημέρα</th>
+                        <th>Σημείο Α</th>
+                        <th>Σημείο Β</th>
+                        <th>Τρόπος Μετάβασης</th>
+                        <th>Διάρκεια</th>
+                        <th class="no-print" style="width: 50px;"></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
             <div class="actions-bar">
-                <button class="btn btn-secondary" onclick="exportPDF('printable-trip-content', 'Travel_Itinerary')">🖨️ Εκτύπωση σε PDF</button>
+                <button class="btn btn-secondary" onclick="exportPDF('details-routes-table')">🖨️ Εκτύπωση σε PDF</button>
                 <button class="btn btn-secondary" onclick="showHomeView()">↩ Επιστροφή στην Αρχική</button>
             </div>
         </div>
@@ -470,7 +435,7 @@
         let createdRoutes = [];
         let activeTripData = null;
 
-        window.onload = () => {
+        window.onload = function() {
             if (currentUserId) {
                 showHomeView();
             } else {
@@ -479,7 +444,9 @@
         };
 
         function switchView(viewId) {
-            document.querySelectorAll(".view-section").forEach(sec => sec.classList.remove("active"));
+            document.querySelectorAll(".view-section").forEach(function(sec) {
+                sec.classList.remove("active");
+            });
             document.getElementById(viewId).classList.add("active");
         }
 
@@ -506,7 +473,7 @@
                 const res = await fetch(endpoint, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username: username, password: password })
                 });
                 const data = await res.json();
                 if (!res.ok) {
@@ -517,7 +484,7 @@
                 localStorage.setItem("travel_user_id", currentUserId);
                 showHomeView();
             } catch (err) {
-                alert("Σφάλμα δικτύου");
+                alert("Σφάλμα επικοινωνίας με τον server");
             }
         }
 
@@ -534,25 +501,26 @@
         }
 
         async function loadUserTripsList() {
+            if (!currentUserId) return;
             try {
-                const res = await fetch(`/api/trips/${currentUserId}`);
+                const res = await fetch("/api/trips/" + currentUserId);
                 const data = await res.json();
                 const listContainer = document.getElementById("city-list");
                 listContainer.innerHTML = "";
 
-                if (data.trips.length === 0) {
-                    listContainer.innerHTML = `<div style="padding: 12px; font-size: 13px; color: var(--text-muted);">Δεν υπάρχουν ταξίδια</div>`;
+                if (!data.trips || data.trips.length === 0) {
+                    listContainer.innerHTML = '<div style="padding: 12px; font-size: 13px; color: var(--text-muted);">Δεν υπάρχουν ταξίδια</div>';
                     return;
                 }
 
-                data.trips.forEach(t => {
+                data.trips.forEach(function(t) {
                     const row = document.createElement("div");
                     row.className = "city-row";
 
                     const titleSpan = document.createElement("span");
                     titleSpan.style = "cursor: pointer; flex-grow: 1;";
                     titleSpan.innerText = t.city;
-                    titleSpan.onclick = () => {
+                    titleSpan.onclick = function() {
                         document.getElementById("city-dropdown").style.display = "none";
                         openTripDetails(t.id);
                     };
@@ -561,7 +529,7 @@
                     delBtn.className = "btn-icon-del";
                     delBtn.innerText = "✕";
                     delBtn.title = "Διαγραφή ταξιδιού";
-                    delBtn.onclick = (e) => {
+                    delBtn.onclick = function(e) {
                         e.stopPropagation();
                         confirmAndDeleteTrip(t.id, t.city);
                     };
@@ -581,11 +549,11 @@
         }
 
         async function confirmAndDeleteTrip(tripId, cityName) {
-            const confirmed = confirm(`Είσαι σίγουρος ότι θέλεις να διαγράψεις οριστικά το ταξίδι "${cityName}";`);
+            const confirmed = confirm('Είσαι σίγουρος ότι θέλεις να διαγράψεις οριστικά το ταξίδι "' + cityName + '";');
             if (!confirmed) return;
 
             try {
-                const res = await fetch(`/api/trip/${tripId}`, { method: "DELETE" });
+                const res = await fetch("/api/trip/" + tripId, { method: "DELETE" });
                 if (res.ok) {
                     loadUserTripsList();
                 } else {
@@ -665,7 +633,7 @@
             document.getElementById("create-table-container").style.display = "block";
             document.getElementById("create-back-standalone").style.display = "none";
 
-            createdRoutes.forEach((r, idx) => {
+            createdRoutes.forEach(function(r, idx) {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td>${r.day_number}</td>
@@ -711,13 +679,13 @@
         // ================= VIEW TRIP DETAILS =================
         async function openTripDetails(tripId) {
             try {
-                const res = await fetch(`/api/trip/${tripId}`);
+                const res = await fetch("/api/trip/" + tripId);
                 activeTripData = await res.json();
 
                 document.getElementById("view-city-title").innerText = activeTripData.city;
                 const ratingBadge = document.getElementById("view-city-rating");
                 if (activeTripData.avg_rating) {
-                    ratingBadge.innerText = `⭐ Μέσος Όρος: ${activeTripData.avg_rating}/10`;
+                    ratingBadge.innerText = "⭐ Μέσος Όρος: " + activeTripData.avg_rating + "/10";
                 } else {
                     ratingBadge.innerText = "";
                 }
@@ -735,9 +703,9 @@
 
             const ratings = activeTripData.ratings || {};
 
-            activeTripData.routes.forEach(r => {
-                const rateA = ratings[r.point_a] !== undefined ? ` (${ratings[r.point_a]}/10)` : "";
-                const rateB = ratings[r.point_b] !== undefined ? ` (${ratings[r.point_b]}/10)` : "";
+            activeTripData.routes.forEach(function(r) {
+                const rateA = ratings[r.point_a] !== undefined ? " (" + ratings[r.point_a] + "/10)" : "";
+                const rateB = ratings[r.point_b] !== undefined ? " (" + ratings[r.point_b] + "/10)" : "";
 
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
@@ -754,7 +722,7 @@
 
         async function deleteSavedRoute(routeId) {
             try {
-                const res = await fetch(`/api/route/${routeId}`, { method: "DELETE" });
+                const res = await fetch("/api/route/" + routeId, { method: "DELETE" });
                 if (res.ok) {
                     openTripDetails(activeTripData.trip_id);
                 } else {
@@ -770,7 +738,7 @@
             if (!activeTripData) return;
 
             const uniquePoints = new Set();
-            activeTripData.routes.forEach(r => {
+            activeTripData.routes.forEach(function(r) {
                 uniquePoints.add(r.point_a);
                 uniquePoints.add(r.point_b);
             });
@@ -780,7 +748,7 @@
 
             const ratings = activeTripData.ratings || {};
 
-            uniquePoints.forEach(pt => {
+            uniquePoints.forEach(function(pt) {
                 const row = document.createElement("div");
                 row.className = "rating-item";
                 const val = ratings[pt] !== undefined ? ratings[pt] : "";
@@ -802,7 +770,7 @@
             const inputs = document.querySelectorAll("#ratings-list input");
             const ratingsPayload = [];
 
-            inputs.forEach(inp => {
+            inputs.forEach(function(inp) {
                 const val = parseFloat(inp.value);
                 if (!isNaN(val)) {
                     ratingsPayload.push({
@@ -838,16 +806,18 @@
             }
         }
 
-// ================= PDF EXPORT (ΠΕΝΤΑΚΑΘΑΡΟ PRINT LAYOUT) =================
-        function exportPDF(elementId, filename) {
+        // ================= PDF EXPORT (PRINT WINDOW) =================
+        function exportPDF(tableId) {
             const cityName = activeTripData ? activeTripData.city : (document.getElementById("trip-city").value || "Travel_Plan");
-            const ratingText = (activeTripData && activeTripData.avg_rating) ? `⭐ Μέσος Όρος: ${activeTripData.avg_rating}/10` : "";
+            const ratingText = (activeTripData && activeTripData.avg_rating) ? "⭐ Μέσος Όρος: " + activeTripData.avg_rating + "/10" : "";
 
-            const tableElement = document.getElementById(elementId).querySelector("table") || document.getElementById(elementId);
+            const tableElement = document.getElementById(tableId);
             const cloneTable = tableElement.cloneNode(true);
 
             // Αφαίρεση της στήλης με τα κόκκινα ✕
-            cloneTable.querySelectorAll(".no-print, th:last-child, td:last-child").forEach(el => el.remove());
+            cloneTable.querySelectorAll(".no-print, th:last-child, td:last-child").forEach(function(el) {
+                el.remove();
+            });
 
             const printWindow = window.open("", "_blank", "width=900,height=700");
             printWindow.document.write(`
@@ -857,8 +827,8 @@
                     <title>${cityName} - Travel Itinerary</title>
                     <style>
                         body {
-                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                            margin: 30px;
+                            font-family: Arial, sans-serif;
+                            margin: 24px;
                             color: #111827;
                             background: #ffffff;
                         }
@@ -867,50 +837,16 @@
                             justify-content: space-between;
                             align-items: flex-end;
                             border-bottom: 2px solid #4f46e5;
-                            padding-bottom: 12px;
-                            margin-bottom: 24px;
+                            padding-bottom: 10px;
+                            margin-bottom: 20px;
                         }
-                        h1 {
-                            margin: 0;
-                            font-size: 26px;
-                            color: #1e1b4b;
-                        }
-                        p {
-                            margin: 4px 0 0 0;
-                            color: #64748b;
-                            font-size: 14px;
-                        }
-                        .rating {
-                            font-size: 16px;
-                            font-weight: bold;
-                            color: #d97706;
-                        }
-                        table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin-top: 10px;
-                        }
-                        th, td {
-                            border: 1px solid #cbd5e1;
-                            padding: 10px 14px;
-                            text-align: left;
-                            font-size: 13px;
-                        }
-                        th {
-                            background-color: #f1f5f9;
-                            color: #0f172a;
-                            font-weight: 700;
-                            text-transform: uppercase;
-                            font-size: 11px;
-                            letter-spacing: 0.5px;
-                        }
-                        tr:nth-child(even) {
-                            background-color: #f8fafc;
-                        }
-                        @media print {
-                            body { margin: 15mm; }
-                            tr { page-break-inside: avoid; }
-                        }
+                        h1 { margin: 0; font-size: 24px; color: #1e1b4b; }
+                        p { margin: 4px 0 0 0; color: #64748b; font-size: 13px; }
+                        .rating { font-size: 15px; font-weight: bold; color: #d97706; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th, td { border: 1px solid #cbd5e1; padding: 9px 12px; text-align: left; font-size: 12px; }
+                        th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; text-transform: uppercase; }
+                        tr:nth-child(even) { background-color: #f8fafc; }
                     </style>
                 </head>
                 <body>
@@ -929,8 +865,11 @@
             printWindow.document.close();
             printWindow.focus();
 
-            setTimeout(() => {
+            setTimeout(function() {
                 printWindow.print();
                 printWindow.close();
-            }, 350);
+            }, 300);
         }
+    </script>
+</body>
+</html>
