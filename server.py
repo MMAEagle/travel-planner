@@ -3,14 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List
-from passlib.context import CryptContext
 import psycopg2
+import hashlib
+import os
 import uvicorn
 
 # Connection String Supabase
 DB_URL = "postgresql://postgres.ezpzxhsopcdcrpkrzfej:MMAEagle%40123@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI(title="Travel Planner API")
 
@@ -24,6 +23,20 @@ app.add_middleware(
 
 def get_db():
     return psycopg2.connect(DB_URL)
+
+# Native hashing με hashlib (χωρίς dependencies bcrypt)
+def hash_password(password: str) -> str:
+    salt = os.urandom(16).hex()
+    hashed = hashlib.sha256((password + salt).encode('utf-8')).hexdigest()
+    return f"{salt}${hashed}"
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    try:
+        salt, hashed = stored_hash.split("$")
+        check_hash = hashlib.sha256((password + salt).encode('utf-8')).hexdigest()
+        return check_hash == hashed
+    except Exception:
+        return False
 
 # ================= MODELS =================
 class UserAuth(BaseModel):
@@ -65,7 +78,7 @@ def register(user: UserAuth):
         conn.close()
         raise HTTPException(status_code=400, detail="Το username υπάρχει ήδη")
     
-    hashed_pw = pwd_context.hash(user.password)
+    hashed_pw = hash_password(user.password)
     c.execute("INSERT INTO travel_users (username, password_hash) VALUES (%s, %s) RETURNING id", (username, hashed_pw))
     user_id = c.fetchone()[0]
     conn.commit()
@@ -83,7 +96,7 @@ def login(user: UserAuth):
     c.close()
     conn.close()
     
-    if not row or not pwd_context.verify(user.password, row[1]):
+    if not row or not verify_password(user.password, row[1]):
         raise HTTPException(status_code=401, detail="Λανθασμένο username ή κωδικός")
     
     return {"status": "ok", "user_id": row[0], "username": username}
@@ -126,7 +139,6 @@ def get_trip_details(trip_id: int):
     conn = get_db()
     c = conn.cursor()
     
-    # Πόλη
     c.execute("SELECT city FROM travel_trips WHERE id = %s", (trip_id,))
     trip_row = c.fetchone()
     if not trip_row:
@@ -135,7 +147,6 @@ def get_trip_details(trip_id: int):
         raise HTTPException(status_code=404, detail="Το ταξίδι δεν βρέθηκε")
     city = trip_row[0]
     
-    # Διαδρομές
     c.execute("""
         SELECT id, day_number, point_a, point_b, transport_mode, duration 
         FROM travel_routes WHERE trip_id = %s ORDER BY id ASC
@@ -152,11 +163,9 @@ def get_trip_details(trip_id: int):
         for r in c.fetchall()
     ]
     
-    # Βαθμολογίες
     c.execute("SELECT point_name, rating FROM travel_point_ratings WHERE trip_id = %s", (trip_id,))
     ratings_dict = {r[0]: r[1] for r in c.fetchall()}
     
-    # Υπολογισμός μέσου όρου
     avg_rating = None
     if ratings_dict:
         avg_rating = round(sum(ratings_dict.values()) / len(ratings_dict), 1)
@@ -188,7 +197,6 @@ def save_ratings(data: SaveRatingsRequest):
     conn.close()
     return {"status": "ok"}
 
-# ================= FRONTEND SERVE =================
 @app.get("/")
 def serve_index():
     return FileResponse("index.html")
