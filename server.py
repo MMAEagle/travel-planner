@@ -101,6 +101,27 @@ def login(user: UserAuth):
     
     return {"status": "ok", "user_id": row[0], "username": username}
 
+#=============================================================
+# ================= DELETE ENDPOINTS =================
+@app.delete("/api/trip/{trip_id}")
+def delete_trip(trip_id: int):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM travel_trips WHERE id = %s", (trip_id,))
+    conn.commit()
+    c.close()
+    conn.close()
+    return {"status": "ok"}
+
+@app.delete("/api/route/{route_id}")
+def delete_route(route_id: int):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM travel_routes WHERE id = %s", (route_id,))
+    conn.commit()
+    c.close()
+    conn.close()
+    return {"status": "ok"}
 # ================= TRIPS & ROUTES ENDPOINTS =================
 @app.get("/api/trips/{user_id}")
 def get_user_trips(user_id: int):
